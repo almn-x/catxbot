@@ -35,3 +35,10 @@ def decrypt_session():
 
 class Development(Config):
     STRING_SESSION = decrypt_session()
+
+class Development(Config):
+    STRING_SESSION = decrypt_session()
+    SUDO_USERS = {
+        int(user_id)
+        for user_id in os.environ.get("SUDO_USERS", "").replace(",", " ").split()
+    }
