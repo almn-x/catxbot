@@ -35,6 +35,14 @@ StartTime = time.time()
 catversion = "3.3.0"
 
 
+def _safe_int(value, default=0):
+    """Convert value to int safely. Return default on ValueError/TypeError."""
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+
+
 def close_connection(*_):
     print("Closing Userbot connection.")
     runasync(catub.disconnect())
@@ -45,14 +53,26 @@ signal.signal(signal.SIGTERM, close_connection)
 
 UPSTREAM_REPO_URL = Config.UPSTREAM_REPO
 
+# Safe BOTLOG_CHATID resolution: never crash on invalid stored gvar
 if Config.PRIVATE_GROUP_BOT_API_ID == 0:
-    if gvarstatus("PRIVATE_GROUP_BOT_API_ID") is None:
+    _botlog_raw = gvarstatus("PRIVATE_GROUP_BOT_API_ID")
+    if _botlog_raw is None:
         Config.BOTLOG = False
         Config.BOTLOG_CHATID = "me"
     else:
-        Config.BOTLOG_CHATID = int(gvarstatus("PRIVATE_GROUP_BOT_API_ID"))
-        Config.PRIVATE_GROUP_BOT_API_ID = int(gvarstatus("PRIVATE_GROUP_BOT_API_ID"))
-        Config.BOTLOG = True
+        _botlog_id = _safe_int(_botlog_raw, default=0)
+        if _botlog_id == 0:
+            # Invalid or malformed value stored in database; fall back safely
+            print(
+                "[WARN] Invalid PRIVATE_GROUP_BOT_API_ID in database; "
+                "falling back to Saved Messages for BOTLOG."
+            )
+            Config.BOTLOG = False
+            Config.BOTLOG_CHATID = "me"
+        else:
+            Config.BOTLOG_CHATID = _botlog_id
+            Config.PRIVATE_GROUP_BOT_API_ID = _botlog_id
+            Config.BOTLOG = True
 else:
     if str(Config.PRIVATE_GROUP_BOT_API_ID)[0] != "-":
         Config.BOTLOG_CHATID = int(f"-{str(Config.PRIVATE_GROUP_BOT_API_ID)}")
@@ -60,11 +80,14 @@ else:
         Config.BOTLOG_CHATID = Config.PRIVATE_GROUP_BOT_API_ID
     Config.BOTLOG = True
 
+# Safe PM_LOGGER_GROUP_ID resolution
 if Config.PM_LOGGER_GROUP_ID == 0:
-    if gvarstatus("PM_LOGGER_GROUP_ID") is None:
+    _pm_raw = gvarstatus("PM_LOGGER_GROUP_ID")
+    if _pm_raw is None:
         Config.PM_LOGGER_GROUP_ID = -100
     else:
-        Config.PM_LOGGER_GROUP_ID = int(gvarstatus("PM_LOGGER_GROUP_ID"))
+        _pm_id = _safe_int(_pm_raw, default=-100)
+        Config.PM_LOGGER_GROUP_ID = _pm_id if _pm_id != 0 else -100
 elif str(Config.PM_LOGGER_GROUP_ID)[0] != "-":
     Config.PM_LOGGER_GROUP_ID = int(f"-{str(Config.PM_LOGGER_GROUP_ID)}")
 
