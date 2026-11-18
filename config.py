@@ -1,3 +1,4 @@
+
 import os
 import base64
 
@@ -32,9 +33,6 @@ def decrypt_session():
     except Exception:
         raise RuntimeError("Session decryption failed") from None
 
-
-class Development(Config):
-    STRING_SESSION = decrypt_session()
 
 class Development(Config):
     STRING_SESSION = decrypt_session()
