@@ -7,8 +7,8 @@ from sample_config import Config
 
 
 def decrypt_session():
-    encrypted = os.environ.get("ENCRYPTED_SESSION")
-    key_encoded = os.environ.get("SESSION_ENCRYPTION_KEY")
+    encrypted = os.environ.get("ENCRYPTED_SESSION", "").strip()
+    key_encoded = os.environ.get("SESSION_ENCRYPTION_KEY", "").strip()
 
     if not encrypted or not key_encoded:
         raise RuntimeError("Missing session encryption environment variables")
@@ -23,7 +23,7 @@ def decrypt_session():
         nonce = encrypted_data[:12]
         ciphertext = encrypted_data[12:]
 
-        if len(nonce) != 12 or len(ciphertext) < 16:
+        if len(ciphertext) < 16:
             raise ValueError("Invalid encrypted session format")
 
         return AESGCM(key).decrypt(
