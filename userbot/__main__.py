@@ -1,3 +1,4 @@
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~# CatUserBot #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 # Copyright (C) 2020-2023 by TgCatUB@Github.
 
@@ -11,6 +12,7 @@ import contextlib
 import sys
 
 import userbot
+from health_server import start_health_server
 from userbot import BOTLOG_CHATID, PM_LOGGER_GROUP_ID
 
 from .Config import Config
@@ -28,7 +30,7 @@ from .utils import (
 LOGS = logging.getLogger("CatUserbot")
 
 LOGS.info(userbot.__copyright__)
-LOGS.info(f"Licensed under the terms of the {userbot.__license__}")
+LOGS.info(f"Licensed under the terms of {userbot.__license__}")
 
 cmdhr = Config.COMMAND_HAND_LER
 
@@ -42,6 +44,7 @@ except Exception as e:
 
 
 async def startup_process():
+    await start_health_server()
     await verifyLoggerGroup()
     await load_plugins("plugins")
     await load_plugins("assistant")
@@ -77,7 +80,9 @@ async def externalrepo():
         )
         string += f"<b>➜ Repo:  </b><a href='{data[0]}'><b>{data[1]}</b></a>\n<b>     • Imported Plugins:</b>  <code>{data[2]}</code>\n<b>     • Failed to Import:</b>  <code>{', '.join(data[3])}</code>\n\n"
     if Config.VCMODE:
-        data = await install_externalrepo(Config.VC_REPO, Config.VC_REPOBRANCH, "catvc")
+        data = await install_externalrepo(
+            Config.VC_REPO, Config.VC_REPOBRANCH, "catvc"
+        )
         string += f"<b>➜ Repo:  </b><a href='{data[0]}'><b>{data[1]}</b></a>\n<b>     • Imported Plugins:</b>  <code>{data[2]}</code>\n<b>     • Failed to Import:</b>  <code>{', '.join(data[3])}</code>\n\n"
     if "Imported Plugins" in string:
         await catub.tgbot.send_message(BOTLOG_CHATID, string, parse_mode="html")
