@@ -10,17 +10,26 @@
 import glob
 import os
 import sys
+import time
 import urllib.request
 from datetime import timedelta
 from pathlib import Path
 
 from telethon import Button, functions, types, utils
 
-from userbot import BOTLOG, BOTLOG_CHATID, PM_LOGGER_GROUP_ID
+from userbot import (
+    BOTLOG,
+    BOTLOG_CHATID,
+    PM_LOGGER_GROUP_ID,
+    StartTime,
+    catversion,
+)
+from userbot.core import PLG_INFO
 
 from ..Config import Config
 from ..core.logger import logging
 from ..core.session import catub
+from ..helpers.functions import get_readable_time
 from ..helpers.utils import install_pip
 from ..helpers.utils.utils import runcmd
 from ..sql_helper.global_collection import (
@@ -76,11 +85,36 @@ async def startupmessage():
     """
     try:
         if BOTLOG:
+            uptime = await get_readable_time(time.time() - StartTime)
+            module_count = len(PLG_INFO)
+            caption = (
+                "◆ **CAT USERBOT — STARTUP COMPLETE**\n"
+                "━━━━━━━━━━━━━━━━━━\n"
+                "◉ **Status:** `ONLINE`\n"
+                f"◉ **Version:** `{catversion}`\n"
+                f"◉ **Modules:** `{module_count} loaded`\n"
+                f"◉ **Uptime:** `{uptime}`\n"
+                "━━━━━━━━━━━━━━━━━━\n"
+                "✓ **Ready to operate.**"
+            )
+            card = os.path.join(
+                os.path.dirname(os.path.dirname(__file__)),
+                "assets",
+                "startup_card.jpg",
+            )
+            media = card if os.path.isfile(card) else (
+                "https://graph.org/file/4e3ba8e8f7e535d5a2abe.jpg"
+            )
             Config.CATUBLOGO = await catub.tgbot.send_file(
                 BOTLOG_CHATID,
-                "https://graph.org/file/4e3ba8e8f7e535d5a2abe.jpg",
-                caption="**Your CatUserbot has been started successfully.**",
-                buttons=[(Button.url("Support", "https://t.me/catuserbot_support"),)],
+                media,
+                caption=caption,
+                buttons=[
+                    [
+                        Button.url("Support", "https://t.me/catuserbot_support"),
+                        Button.url("Channel", "https://t.me/catuserbot17"),
+                    ]
+                ],
             )
     except Exception as e:
         LOGS.error(e)
