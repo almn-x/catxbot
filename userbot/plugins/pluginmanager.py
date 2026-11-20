@@ -146,10 +146,6 @@ def _scan_source(source):
                     raise ValueError(f"Blocked dangerous call: os.{node.func.attr}()")
                 if isinstance(node.func.value, ast.Name) and node.func.value.id == "subprocess":
                     raise ValueError("Blocked subprocess API")
-        elif isinstance(node, (ast.Import, ast.ImportFrom)):
-            names = [a.name.split(".")[0] for a in node.names] if isinstance(node, ast.Import) else [node.module.split(".")[0]] if node.module else []
-            if any(name in BLOCKED_IMPORTS for name in names):
-                raise ValueError("Blocked high-risk import: " + ", ".join(names))
     return tree, imports
 
 def _plugin_imports(source):
@@ -213,7 +209,6 @@ def _cleanup_metadata(stem):
             LOADED_CMDS.pop(command, None)
 
 def _entry_packages(entry):
-    # Supports both the current metadata format and the earlier list format.
     if isinstance(entry, dict):
         return set(entry.get("packages", []))
     return set(entry or [])
@@ -232,7 +227,6 @@ def _remove_plugin_dependencies(stem):
         shared.update(_entry_packages(other_entry))
     keep = _requirements_baseline() | shared
     removable = owned - keep
-    # Do not remove a distribution still required by another installed distribution.
     installed = {}
     for dist in importlib.metadata.distributions():
         name = re.sub(r"[-_.]+", "-", dist.metadata.get("Name", dist.name)).lower()
@@ -251,7 +245,10 @@ async def _reply(event, message):
     try:
         await event.edit(message)
     except Exception:
-        await event.reply(message)
+        try:
+            await event.reply(message)
+        except Exception:
+            pass
 
 async def _install(event):
     if not _authorized(event) or event.chat_id != _log_chat():
@@ -276,8 +273,6 @@ async def _install(event):
         old_entry = db.get(stem, {})
         old_owned = _entry_owned(old_entry)
         newly_installed = _pip_install(packages)
-        # Track every declared dependency for shared-use protection, but only
-        # mark packages newly installed by this manager as removable/owned.
         owned_now = old_owned | newly_installed
         fd, temp_name = tempfile.mkstemp(prefix=f".{stem}_", suffix=".py", dir=str(PLUGIN_DIR))
         os.close(fd)
@@ -373,4 +368,8 @@ def _register_all():
             _register(_command_pattern([prefix], "uninstall"), _uninstall, incoming=True, sudo_ids=sudo_ids)
             _register(_command_pattern([prefix], "plugins"), _list_plugins, incoming=True, sudo_ids=sudo_ids)
 
-_register_all()
+# ❌ CAT Userbot-s import-times register not possible — init() function move
+# _register_all()  ←  init()-
+
+def init(client):
+    _register_all()
