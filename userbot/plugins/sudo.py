@@ -31,10 +31,17 @@ ENV = bool(os.environ.get("ENV", False))
 
 
 async def _init() -> None:
+    # FIX: Do NOT clear Config.SUDO_USERS — that would wipe out IDs
+    # supplied via the SUDO_USERS environment variable on startup.
+    # We only ADD ids from the database (added via .addsudo).
     sudousers = _sudousers_list()
-    Config.SUDO_USERS.clear()
     for user_d in sudousers:
         Config.SUDO_USERS.add(user_d)
+    if Config.SUDO_USERS:
+        LOGS.info(
+            f"[SUDO] Loaded {len(Config.SUDO_USERS)} sudo user(s) "
+            f"(env + database merged)."
+        )
 
 
 def get_key(val):
