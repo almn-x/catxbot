@@ -1,4 +1,3 @@
-
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~# CatUserBot #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 # Copyright (C) 2020-2023 by TgCatUB@Github.
 
@@ -43,8 +42,28 @@ except Exception as e:
     sys.exit()
 
 
+async def _send_fast_startup_log():
+    """Send fast startup notification to log group as soon as connection is up."""
+    if not BOTLOG_CHATID or BOTLOG_CHATID == "me":
+        return
+    try:
+        await catub.tgbot.send_message(
+            BOTLOG_CHATID,
+            "⚡ **CAT Userbot Starting...**\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            "◉ **Connection:** `ONLINE`\n"
+            "◉ **Health Server:** `ACTIVE`\n"
+            "◉ **Status:** `Loading plugins...`\n"
+            "━━━━━━━━━━━━━━━━━━",
+        )
+        LOGS.info("[FAST-LOG] Startup notification sent to log group.")
+    except Exception as e:
+        LOGS.warning(f"[FAST-LOG] Could not send startup log: {e}")
+
+
 async def startup_process():
     await start_health_server()
+    await _send_fast_startup_log()  # ← NEW: instant log group notification
     await verifyLoggerGroup()
     await load_plugins("plugins")
     await load_plugins("assistant")
