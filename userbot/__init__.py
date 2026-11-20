@@ -36,7 +36,7 @@ catversion = "3.3.0"
 
 
 def _safe_int(value, default=0):
-    """Convert value to int safely. Return default on ValueError/TypeError."""
+    """Convert value to int safely; return default on ValueError/TypeError."""
     try:
         return int(value)
     except (ValueError, TypeError):
@@ -53,7 +53,8 @@ signal.signal(signal.SIGTERM, close_connection)
 
 UPSTREAM_REPO_URL = Config.UPSTREAM_REPO
 
-# Safe BOTLOG_CHATID resolution: never crash on invalid stored gvar
+# ---------- Safe BOTLOG_CHATID resolution ----------
+# Never crash if the DB contains an invalid value (e.g. spam-report error message).
 if Config.PRIVATE_GROUP_BOT_API_ID == 0:
     _botlog_raw = gvarstatus("PRIVATE_GROUP_BOT_API_ID")
     if _botlog_raw is None:
@@ -62,7 +63,6 @@ if Config.PRIVATE_GROUP_BOT_API_ID == 0:
     else:
         _botlog_id = _safe_int(_botlog_raw, default=0)
         if _botlog_id == 0:
-            # Invalid or malformed value stored in database; fall back safely
             print(
                 "[WARN] Invalid PRIVATE_GROUP_BOT_API_ID in database; "
                 "falling back to Saved Messages for BOTLOG."
@@ -80,7 +80,7 @@ else:
         Config.BOTLOG_CHATID = Config.PRIVATE_GROUP_BOT_API_ID
     Config.BOTLOG = True
 
-# Safe PM_LOGGER_GROUP_ID resolution
+# ---------- Safe PM_LOGGER_GROUP_ID ----------
 if Config.PM_LOGGER_GROUP_ID == 0:
     _pm_raw = gvarstatus("PM_LOGGER_GROUP_ID")
     if _pm_raw is None:
